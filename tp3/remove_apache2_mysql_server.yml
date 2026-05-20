@@ -1,0 +1,14 @@
+- name: Installation des modules Apcahe et MySQL 
+  hosts: all
+  remote_user: root
+
+  tasks:
+   - name: Installation du package
+     apt:
+       name: "{{ item }}"
+       update_cache: yes
+       state: absent
+     loop:
+       - apache2
+       - mysql-server
+

@@ -1,0 +1,31 @@
+- name: Installation des modules Apcahe et MySQL 
+  hosts: all
+  remote_user: root
+
+  tasks:
+   - name: Installation du package
+     apt:
+       name: "{{ item }}"
+       update_cache: yes
+       state: present
+     loop:
+       - apache2
+       - mysql-server
+     when: "'apache2' in ansible_facts.packages"
+
+   - name: Gather the package facts
+     ansible.builtin.package_facts:
+       manager: auto
+
+   - name: Check whether a package apache2 is installed and create file
+     file:
+       path: "/tmp/check_if_file_exists"
+       state: touch
+     when: "'apache2' in ansible_facts.packages"
+
+   - name: Add a line to a file if the file does not exist, without passing regexp
+     ansible.builtin.lineinfile:
+       path: /var/www/html/index.html
+       line: Test Sylvie NOTTET
+       create: yes
+     when: "'apache2' in ansible_facts.packages"
