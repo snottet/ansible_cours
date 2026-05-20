@@ -1,0 +1,10 @@
+- name: Installation Apache2
+  hosts: all
+  remote_user: root
+
+  tasks:
+   - name: Installation du paquet web apache2
+     apt:
+       name: apache2
+       update_cache: yes
+       state: absent
