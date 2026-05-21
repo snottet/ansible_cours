@@ -2,7 +2,6 @@
   hosts: all
   remote_user: root
 
-
   tasks:
     - name: Install apache2 mysql-server on node 1 & 2
       ansible.builtin.apt:
@@ -11,8 +10,7 @@
           - apache2
           - mysql-server
         state: present
-      when: ansible_facts["hostname"] != "node3"
-
+      when: ansible_hostname != "node3"
 
     - name: Install git, nginx & cowsay on node 3
       ansible.builtin.apt:
@@ -23,20 +21,17 @@
         - git
         - nginx
         - cowsay
-      when: ansible_facts["hostname"] == "node3"
-
+      when: ansible_hostname == "node3"
 
     - name: Install ufw on ubuntu
       ansible.builtin.apt:
         name: ufw
         state: present
-      when: ansible_facts["distribution"] == "Ubuntu"
-
+      when: ansible_distribution == "Ubuntu"
 
     - name: Gather the rpm package facts
       ansible.builtin.package_facts:
         manager: auto
-
 
     - name: Copy index.html if apache2 or nginx is installed
       ansible.builtin.template:
@@ -45,40 +40,42 @@
         mode: '0644'
       when: "'apache2' in ansible_facts.packages or 'nginx' in ansible_facts.packages"
 
-
     - name: Start apache2
       ansible.builtin.service:
         name: apache2
         state: started
-        enabled: true
       when: "'apache2' in ansible_facts.packages"
 
     - name: Start nginx
       ansible.builtin.service:
         name: nginx
         state: started
-        enabled: true
       when: "'nginx' in ansible_facts.packages"
 
-
-     - name: Get date
-       ansible.builtin.debug:
-       var: ansible_date_time
-       tags: debug
-
+    - name: Get date day
+      ansible.builtin.debug:
+        var: ansible_date_time
+      tags: debug
 
     - name: Convertir le jour en entier
       ansible.builtin.set_fact:
-        day_number: "{{ ansible_date_time.day | int}}"
-
+        day_number: "{{ ansible_date_time.day | int }}"
 
     - name: Get date day
       ansible.builtin.debug:
         var: day_number
-
 
     - name: Placer le jour pair ou impair
       ansible.builtin.template:
         src: template/day.j2
         dest: /etc/jour
         mode: '0644'
+
+    - name: Cat file
+      ansible.builtin.command: cat /etc/jour
+      register: day
+      changed_when: false
+
+    - name: Show file content
+      ansible.builtin.debug:
+        var: day
