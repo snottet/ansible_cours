@@ -1,31 +1,60 @@
-- name: Installation des modules Apcahe et MySQL 
+- name: Installer et configurer node 1-3
   hosts: all
-  remote_user: root
+  become: true
+  become_user: root
+
 
   tasks:
-   - name: Installation du package
-     apt:
-       name: "{{ item }}"
-       update_cache: yes
-       state: present
-     loop:
-       - apache2
-       - mysql-server
-     when: "'apache2' in ansible_facts.packages"
+    - name: Install apache2 mysql-server on node 1 & 2
+      ansible.builtin.apt:
+        update_cache: true
+        name:
+          - apache2
+          - mysql-server
+        state: present
+      when: ansible_facts["hostname"] != "node3"
 
-   - name: Gather the package facts
-     ansible.builtin.package_facts:
-       manager: auto
 
-   - name: Check whether a package apache2 is installed and create file
-     file:
-       path: "/tmp/check_if_file_exists"
-       state: touch
-     when: "'apache2' in ansible_facts.packages"
+    - name: Install git, nginx & cowsay on node 3
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item }}"
+        state: present
+      loop:
+        - git
+        - nginx
+        - cowsay
+      when: ansible_facts["hostname"] == "node3"
 
-   - name: Add a line to a file if the file does not exist, without passing regexp
-     ansible.builtin.lineinfile:
-       path: /var/www/html/index.html
-       line: Test Sylvie NOTTET
-       create: yes
-     when: "'apache2' in ansible_facts.packages"
+
+    - name: Install ufw on ubuntu
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      when: ansible_facts["distribution"] == "Ubuntu"
+
+
+    - name: Gather the rpm package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Copy index.html if apache2 or nginx is installed
+      ansible.builtin.template:
+        src: template/index.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+      when: "'apache2' in ansible_facts.packages or 'nginx' in ansible_facts.packages"
+
+    - name: Start apache2
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+      when: "'apache2' in ansible_facts.packages"
+
+    - name: Start nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+      when: "'nginx' in ansible_facts.packages"
